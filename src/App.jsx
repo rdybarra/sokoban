@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import rawMaps from "./maps.txt?raw";
-import { Undo2 } from "lucide-react";
+import { Undo2, Menu, X } from "lucide-react";
 
 const MAPS = rawMaps
   .split(/;\s*\d+\n/)
@@ -172,6 +172,7 @@ function getInitialGameState(mapIndex = 0) {
 
 function App() {
   const [gameState, setGameState] = useState(() => getInitialGameState(0));
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleUndo = useCallback(() => {
     setGameState((prev) => {
@@ -309,6 +310,7 @@ function App() {
 
   const loadMap = (index) => {
     setGameState(getInitialGameState(index));
+    setIsSidebarOpen(false);
   };
 
   const handlePrevMap = () => {
@@ -325,8 +327,19 @@ function App() {
 
   return (
     <div className="layout">
-      <div className="sidebar">
-        <h2>Levels</h2>
+      {/* Sidebar Overlay */}
+      <div
+        className={`sidebar-overlay ${isSidebarOpen ? "open" : ""}`}
+        onClick={() => setIsSidebarOpen(false)}
+      />
+
+      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-header">
+          <h2>Levels</h2>
+          <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>
+            <X size={24} />
+          </button>
+        </div>
         <div className="map-list">
           {MAPS.map((_, index) => (
             <button
@@ -338,6 +351,12 @@ function App() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="top-nav">
+        <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
+          <Menu size={28} />
+        </button>
       </div>
 
       <div className="main-content">
