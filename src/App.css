@@ -179,6 +179,74 @@
   margin-top: 30px;
 }
 
+.mobile-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.mobile-controls-row {
+  display: flex;
+  gap: 10px;
+}
+
+.control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #333;
+  color: white;
+  border: 2px solid #555;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn:active {
+  background-color: #555;
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.undo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  background-color: #444;
+  color: #ccc;
+  border: 1px solid #555;
+  padding: 6px 16px;
+  border-radius: 20px; /* Pill shape */
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.undo-btn:hover:not(:disabled) {
+  background-color: #555;
+  color: #fff;
+}
+
+.undo-btn:active:not(:disabled) {
+  background-color: #666;
+  transform: translateY(1px);
+}
+
+.undo-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .nav-btn {
   background-color: #2a2a2a;
   color: #fff;

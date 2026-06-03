@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import rawMaps from "./maps.txt?raw";
+import { Undo2 } from "lucide-react";
 
 const MAPS = rawMaps
   .split(/;\s*\d+\n/)
@@ -147,11 +148,117 @@ function getInitialGameState(mapIndex = 0) {
     }),
   );
 
-  return { level, boxes, player, moves: 0, mapIndex };
+  return { level, boxes, player, moves: 0, mapIndex, history: [] };
 }
 
 function App() {
   const [gameState, setGameState] = useState(() => getInitialGameState(0));
+
+  const handleUndo = useCallback(() => {
+    setGameState((prev) => {
+      if (prev.history.length === 0) return prev;
+
+      const newHistory = [...prev.history];
+      const previousState = newHistory.pop();
+
+      return {
+        ...prev,
+        player: previousState.player,
+        boxes: previousState.boxes,
+        moves: previousState.moves,
+        history: newHistory,
+      };
+    });
+  }, []);
+
+  const handleMove = useCallback((move) => {
+    setGameState((prev) => {
+      if (prev.player.x === -1) return prev;
+
+      // Check if already won to prevent further movement
+      const isWon =
+        prev.boxes.length > 0 &&
+        prev.boxes.every((b) => prev.level[b.y][b.x] === ".");
+      if (isWon) return prev;
+
+      const nx = prev.player.x + move.dx;
+      const ny = prev.player.y + move.dy;
+
+      // Check bounds for player
+      if (
+        ny < 0 ||
+        ny >= prev.level.length ||
+        nx < 0 ||
+        nx >= prev.level[0].length
+      ) {
+        return prev;
+      }
+
+      // Check wall collision for player
+      if (prev.level[ny][nx] === "#") {
+        return prev;
+      }
+
+      // Create snapshot of dynamic state to push onto history
+      const currentStateSnapshot = {
+        player: { ...prev.player },
+        boxes: prev.boxes.map((b) => ({ ...b })),
+        moves: prev.moves,
+      };
+
+      // Check if there is a box at the target position
+      const boxIndex = prev.boxes.findIndex((b) => b.x === nx && b.y === ny);
+
+      if (boxIndex !== -1) {
+        // Calculate where the box would be pushed
+        const bx = nx + move.dx;
+        const by = ny + move.dy;
+
+        // Check bounds for box
+        if (
+          by < 0 ||
+          by >= prev.level.length ||
+          bx < 0 ||
+          bx >= prev.level[0].length
+        ) {
+          return prev;
+        }
+
+        // Check wall collision for box
+        if (prev.level[by][bx] === "#") {
+          return prev;
+        }
+
+        // Check if there is another box at the push destination
+        const otherBoxIndex = prev.boxes.findIndex(
+          (b) => b.x === bx && b.y === by,
+        );
+        if (otherBoxIndex !== -1) {
+          return prev; // Cannot push two boxes at once
+        }
+
+        // Push is valid, move the box and player
+        const newBoxes = [...prev.boxes];
+        newBoxes[boxIndex] = { x: bx, y: by };
+
+        return {
+          ...prev,
+          player: { x: nx, y: ny },
+          boxes: newBoxes,
+          moves: prev.moves + 1,
+          history: [...prev.history, currentStateSnapshot],
+        };
+      }
+
+      // Just move the player if no box is in the way
+      return {
+        ...prev,
+        player: { x: nx, y: ny },
+        moves: prev.moves + 1,
+        history: [...prev.history, currentStateSnapshot],
+      };
+    });
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -166,89 +273,12 @@ function App() {
       if (!move) return;
 
       e.preventDefault(); // Prevent page scrolling
-
-      setGameState((prev) => {
-        if (prev.player.x === -1) return prev;
-
-        // Check if already won to prevent further movement
-        const isWon =
-          prev.boxes.length > 0 &&
-          prev.boxes.every((b) => prev.level[b.y][b.x] === ".");
-        if (isWon) return prev;
-
-        const nx = prev.player.x + move.dx;
-        const ny = prev.player.y + move.dy;
-
-        // Check bounds for player
-        if (
-          ny < 0 ||
-          ny >= prev.level.length ||
-          nx < 0 ||
-          nx >= prev.level[0].length
-        ) {
-          return prev;
-        }
-
-        // Check wall collision for player
-        if (prev.level[ny][nx] === "#") {
-          return prev;
-        }
-
-        // Check if there is a box at the target position
-        const boxIndex = prev.boxes.findIndex((b) => b.x === nx && b.y === ny);
-
-        if (boxIndex !== -1) {
-          // Calculate where the box would be pushed
-          const bx = nx + move.dx;
-          const by = ny + move.dy;
-
-          // Check bounds for box
-          if (
-            by < 0 ||
-            by >= prev.level.length ||
-            bx < 0 ||
-            bx >= prev.level[0].length
-          ) {
-            return prev;
-          }
-
-          // Check wall collision for box
-          if (prev.level[by][bx] === "#") {
-            return prev;
-          }
-
-          // Check if there is another box at the push destination
-          const otherBoxIndex = prev.boxes.findIndex(
-            (b) => b.x === bx && b.y === by,
-          );
-          if (otherBoxIndex !== -1) {
-            return prev; // Cannot push two boxes at once
-          }
-
-          // Push is valid, move the box and player
-          const newBoxes = [...prev.boxes];
-          newBoxes[boxIndex] = { x: bx, y: by };
-
-          return {
-            ...prev,
-            player: { x: nx, y: ny },
-            boxes: newBoxes,
-            moves: prev.moves + 1,
-          };
-        }
-
-        // Just move the player if no box is in the way
-        return {
-          ...prev,
-          player: { x: nx, y: ny },
-          moves: prev.moves + 1,
-        };
-      });
+      handleMove(move);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [handleMove]);
 
   // Derive the combined display board
   const displayBoard = gameState.level.map((row) => [...row]);
@@ -324,6 +354,46 @@ function App() {
 
           {isWon && <div className="win-message">🎉 You Win! 🎉</div>}
           <BoardRender board={displayBoard} />
+
+          <div className="mobile-controls">
+            <div className="mobile-controls-row">
+              <button
+                className="control-btn"
+                onClick={() => handleMove({ dx: 0, dy: -1 })}
+              >
+                ↑
+              </button>
+            </div>
+            <div className="mobile-controls-row">
+              <button
+                className="control-btn"
+                onClick={() => handleMove({ dx: -1, dy: 0 })}
+              >
+                ←
+              </button>
+              <button
+                className="control-btn"
+                onClick={() => handleMove({ dx: 0, dy: 1 })}
+              >
+                ↓
+              </button>
+              <button
+                className="control-btn"
+                onClick={() => handleMove({ dx: 1, dy: 0 })}
+              >
+                →
+              </button>
+            </div>
+
+            <button
+              className="undo-btn"
+              onClick={handleUndo}
+              disabled={gameState.history.length === 0 || isWon}
+            >
+              <Undo2 size={16} />
+              Undo
+            </button>
+          </div>
 
           <div className="nav-controls">
             <button
