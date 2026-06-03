@@ -89,10 +89,12 @@ function parseBoard(boardStr) {
   return board;
 }
 
-function BoardRender({ board }) {
+function BoardRender({ level, boxes, player }) {
+  // Add relative positioning to the board container
   return (
-    <div className="board">
-      {board.map((row, y) => (
+    <div className="board board-layered">
+      {/* Static level layer */}
+      {level.map((row, y) => (
         <div key={y} className="row">
           {row.map((cell, x) => {
             const cellType = CHAR_MAP[cell] || "empty";
@@ -102,20 +104,37 @@ function BoardRender({ board }) {
                 className={`cell ${cellType}`}
                 title={`(${x}, ${y}): ${cell}`}
               >
-                {cell === "@" || cell === "+"
-                  ? "🧑"
-                  : cell === "$"
-                    ? "📦"
-                    : cell === "*"
-                      ? "✅"
-                      : cell === "."
-                        ? "🎯"
-                        : ""}
+                {cell === "." ? " " : ""}
               </div>
             );
           })}
         </div>
       ))}
+
+      {/* Dynamic entities layer */}
+      {boxes.map((box, i) => {
+        const isBoxOnGoal = level[box.y] && level[box.y][box.x] === ".";
+        return (
+          <div
+            key={`box-${i}`}
+            className={`cell entity box ${isBoxOnGoal ? "box-on-goal" : ""}`}
+            style={{ transform: `translate(${box.x * 40}px, ${box.y * 40}px)` }}
+          >
+            📦
+          </div>
+        );
+      })}
+
+      {player.x !== -1 && player.y !== -1 && (
+        <div
+          className="cell entity player"
+          style={{
+            transform: `translate(${player.x * 40}px, ${player.y * 40}px)`,
+          }}
+        >
+          🧑
+        </div>
+      )}
     </div>
   );
 }
@@ -280,26 +299,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleMove]);
 
-  // Derive the combined display board
-  const displayBoard = gameState.level.map((row) => [...row]);
-
-  gameState.boxes.forEach((box) => {
-    if (displayBoard[box.y][box.x] === ".") {
-      displayBoard[box.y][box.x] = "*"; // Box on goal
-    } else {
-      displayBoard[box.y][box.x] = "$"; // Box on floor
-    }
-  });
-
-  const { x, y } = gameState.player;
-  if (x !== -1 && y !== -1) {
-    if (displayBoard[y][x] === "." || displayBoard[y][x] === "*") {
-      displayBoard[y][x] = "+"; // Player on goal
-    } else {
-      displayBoard[y][x] = "@"; // Player on floor (or box)
-    }
-  }
-
   const isWon =
     gameState.boxes.length > 0 &&
     gameState.boxes.every((b) => gameState.level[b.y][b.x] === ".");
@@ -353,7 +352,11 @@ function App() {
           </div>
 
           {isWon && <div className="win-message">🎉 You Win! 🎉</div>}
-          <BoardRender board={displayBoard} />
+          <BoardRender
+            level={gameState.level}
+            boxes={gameState.boxes}
+            player={gameState.player}
+          />
 
           <div className="mobile-controls">
             <div className="mobile-controls-row">

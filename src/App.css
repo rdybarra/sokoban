@@ -76,6 +76,10 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
+.board-layered {
+  position: relative;
+}
+
 .row {
   display: flex;
 }
@@ -88,6 +92,14 @@
   justify-content: center;
   font-size: 24px;
   user-select: none;
+}
+
+.entity {
+  position: absolute;
+  top: 20px; /* Account for the board padding */
+  left: 20px; /* Account for the board padding */
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 10;
 }
 
 .cell.wall {
@@ -105,19 +117,20 @@
 }
 
 .cell.goal {
-  background-color: #3a4a3a;
+  background-color: #107010;
 }
 
 .cell.box {
-  background-color: #3d3d3d;
+  background-color: transparent;
 }
 
 .cell.box-on-goal {
-  background-color: #3a4a3a;
+  background-color: #4ade80;
 }
 
 .cell.player {
-  background-color: #3d3d3d;
+  background-color: transparent;
+  z-index: 20; /* Player should always be on top of boxes */
 }
 
 .header-controls {
