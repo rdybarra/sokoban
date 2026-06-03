@@ -118,7 +118,9 @@ function BoardRender({ level, boxes, player }) {
           <div
             key={`box-${i}`}
             className={`cell entity box ${isBoxOnGoal ? "box-on-goal" : ""}`}
-            style={{ transform: `translate(${box.x * 40}px, ${box.y * 40}px)` }}
+            style={{
+              transform: `translate(calc(${box.x} * var(--cell-size)), calc(${box.y} * var(--cell-size)))`,
+            }}
           >
             📦
           </div>
@@ -129,7 +131,7 @@ function BoardRender({ level, boxes, player }) {
         <div
           className="cell entity player"
           style={{
-            transform: `translate(${player.x * 40}px, ${player.y * 40}px)`,
+            transform: `translate(calc(${player.x} * var(--cell-size)), calc(${player.y} * var(--cell-size)))`,
           }}
         >
           🧑
