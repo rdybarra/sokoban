@@ -172,8 +172,27 @@ function getInitialGameState(mapIndex = 0) {
   return { level, boxes, player, moves: 0, mapIndex, history: [] };
 }
 
+const getInitialProgress = () => {
+  try {
+    return JSON.parse(localStorage.getItem("sokoban_progress") || "{}");
+  } catch {
+    return {};
+  }
+};
+
 function App() {
-  const [gameState, setGameState] = useState(() => getInitialGameState(0));
+  const [bestScores, setBestScores] = useState(getInitialProgress);
+
+  const [gameState, setGameState] = useState(() => {
+    const scores = getInitialProgress();
+    const beaten = Object.keys(scores).map(Number);
+    if (beaten.length === 0) return getInitialGameState(0);
+
+    const maxBeaten = Math.max(...beaten);
+    const nextLevel = maxBeaten + 1;
+    return getInitialGameState(nextLevel >= MAPS.length ? 0 : nextLevel);
+  });
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleUndo = useCallback(() => {
@@ -306,6 +325,20 @@ function App() {
     gameState.boxes.length > 0 &&
     gameState.boxes.every((b) => gameState.level[b.y][b.x] === ".");
 
+  useEffect(() => {
+    if (isWon) {
+      setBestScores((prev) => {
+        const currentBest = prev[gameState.mapIndex];
+        if (currentBest === undefined || gameState.moves < currentBest) {
+          const newScores = { ...prev, [gameState.mapIndex]: gameState.moves };
+          localStorage.setItem("sokoban_progress", JSON.stringify(newScores));
+          return newScores;
+        }
+        return prev;
+      });
+    }
+  }, [isWon, gameState.mapIndex, gameState.moves]);
+
   const handleReset = () => {
     setGameState(getInitialGameState(gameState.mapIndex));
   };
@@ -349,7 +382,10 @@ function App() {
               className={`map-btn ${gameState.mapIndex === index ? "active" : ""}`}
               onClick={() => loadMap(index)}
             >
-              Level {index + 1}
+              Level {index + 1}{" "}
+              {bestScores[index] !== undefined
+                ? `(⭐ ${bestScores[index]})`
+                : ""}
             </button>
           ))}
         </div>
@@ -366,7 +402,14 @@ function App() {
           <h1>Sokoban</h1>
 
           <div className="header-controls">
-            <div className="moves">Moves: {gameState.moves}</div>
+            <div className="moves">
+              Moves: {gameState.moves}
+              {bestScores[gameState.mapIndex] !== undefined && (
+                <span style={{ marginLeft: "10px", color: "#4ade80" }}>
+                  Best: {bestScores[gameState.mapIndex]}
+                </span>
+              )}
+            </div>
             <button className="reset-btn" onClick={handleReset}>
               Restart Level
             </button>
