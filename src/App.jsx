@@ -1,205 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
-import rawMaps from "./maps/beginner.txt?raw";
-import { Undo2, Menu, X } from "lucide-react";
-
-function parseSokobanFile(rawText) {
-  const lines = rawText.split(/\r?\n/);
-  const parsedMaps = [];
-  let currentMap = [];
-
-  const mapLineRegex = /^[ \t]*[#@+$*._-]*#[#@+$*._ \t-]*$/;
-
-  for (let line of lines) {
-    if (mapLineRegex.test(line)) {
-      currentMap.push(line);
-    } else {
-      if (currentMap.length > 0) {
-        parsedMaps.push(currentMap.join("\n"));
-        currentMap = [];
-      }
-    }
-  }
-  if (currentMap.length > 0) {
-    parsedMaps.push(currentMap.join("\n"));
-  }
-
-  return parsedMaps;
-}
-
-const MAPS = parseSokobanFile(rawMaps);
-
-const CHAR_MAP = {
-  "#": "wall",
-  " ": "empty",
-  _: "floor",
-  $: "box",
-  ".": "goal",
-  "*": "box-on-goal",
-  "@": "player",
-  "+": "player-on-goal",
-};
-
-function parseBoard(boardStr) {
-  // Remove \r if present and split by \n
-  const lines = boardStr.replace(/\r/g, "").split("\n");
-
-  // Find the maximum width
-  const maxWidth = Math.max(...lines.map((line) => line.length));
-
-  // Pad shorter lines with spaces to ensure a perfect grid
-  const board = lines.map((line) => {
-    const chars = line.split("");
-    while (chars.length < maxWidth) {
-      chars.push(" ");
-    }
-    return chars;
-  });
-
-  const height = board.length;
-
-  // 1. Setup visited array for Flood Fill
-  const isExterior = Array.from({ length: height }, () =>
-    Array(maxWidth).fill(false),
-  );
-  const queue = [];
-
-  // 2. Start flood fill from all perimeter tiles
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < maxWidth; x++) {
-      if (y === 0 || y === height - 1 || x === 0 || x === maxWidth - 1) {
-        if (board[y][x] !== "#") {
-          queue.push([x, y]);
-          isExterior[y][x] = true;
-        }
-      }
-    }
-  }
-
-  // 3. Run the flood fill (Breadth-First Search)
-  const dirs = [
-    [0, 1],
-    [0, -1],
-    [1, 0],
-    [-1, 0],
-  ];
-  while (queue.length > 0) {
-    const [x, y] = queue.shift();
-    for (const [dx, dy] of dirs) {
-      const nx = x + dx;
-      const ny = y + dy;
-      // If within bounds, not visited, and not a wall
-      if (nx >= 0 && nx < maxWidth && ny >= 0 && ny < height) {
-        if (!isExterior[ny][nx] && board[ny][nx] !== "#") {
-          isExterior[ny][nx] = true;
-          queue.push([nx, ny]);
-        }
-      }
-    }
-  }
-
-  // 4. Convert unreached interior empty spaces to floor
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < maxWidth; x++) {
-      if (!isExterior[y][x] && board[y][x] === " ") {
-        board[y][x] = "_";
-      }
-    }
-  }
-
-  return board;
-}
-
-function BoardRender({ level, boxes, player }) {
-  // Add relative positioning to the board container
-  return (
-    <div className="board board-layered">
-      {/* Static level layer */}
-      {level.map((row, y) => (
-        <div key={y} className="row">
-          {row.map((cell, x) => {
-            const cellType = CHAR_MAP[cell] || "empty";
-            return (
-              <div
-                key={`${x}-${y}`}
-                className={`cell ${cellType}`}
-                title={`(${x}, ${y}): ${cell}`}
-              >
-                {cell === "." ? " " : ""}
-              </div>
-            );
-          })}
-        </div>
-      ))}
-
-      {/* Dynamic entities layer */}
-      {boxes.map((box, i) => {
-        const isBoxOnGoal = level[box.y] && level[box.y][box.x] === ".";
-        return (
-          <div
-            key={`box-${i}`}
-            className={`cell entity box ${isBoxOnGoal ? "box-on-goal" : ""}`}
-            style={{
-              transform: `translate(calc(${box.x} * var(--cell-size)), calc(${box.y} * var(--cell-size)))`,
-            }}
-          >
-            📦
-          </div>
-        );
-      })}
-
-      {player.x !== -1 && player.y !== -1 && (
-        <div
-          className="cell entity player"
-          style={{
-            transform: `translate(calc(${player.x} * var(--cell-size)), calc(${player.y} * var(--cell-size)))`,
-          }}
-        >
-          🧑
-        </div>
-      )}
-    </div>
-  );
-}
-
-function getInitialGameState(mapIndex = 0) {
-  const boardStr = MAPS[mapIndex] || MAPS[0];
-  const board = parseBoard(boardStr);
-  const boxes = [];
-  let player = { x: -1, y: -1 };
-
-  const level = board.map((row, y) =>
-    row.map((cell, x) => {
-      if (cell === "@") {
-        player = { x, y };
-        return "_"; // Floor underneath
-      }
-      if (cell === "+") {
-        player = { x, y };
-        return "."; // Goal underneath
-      }
-      if (cell === "$") {
-        boxes.push({ x, y });
-        return "_"; // Floor underneath
-      }
-      if (cell === "*") {
-        boxes.push({ x, y });
-        return "."; // Goal underneath
-      }
-      return cell;
-    }),
-  );
-
-  return { level, boxes, player, moves: 0, mapIndex, history: [] };
-}
-
-const getInitialProgress = () => {
-  try {
-    return JSON.parse(localStorage.getItem("sokoban_progress") || "{}");
-  } catch {
-    return {};
-  }
-};
+import { Menu } from "lucide-react";
+import { MAPS, getInitialGameState, getInitialProgress } from "./utils/game";
+import BoardRender from "./components/BoardRender";
+import Sidebar from "./components/Sidebar";
+import Footer from "./components/Footer";
+import GameHeader from "./components/GameHeader";
+import MobileControls from "./components/MobileControls";
+import LevelNav from "./components/LevelNav";
 
 function App() {
   const [bestScores, setBestScores] = useState(getInitialProgress);
@@ -215,8 +23,6 @@ function App() {
   });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const handleUndo = useCallback(() => {
     setGameState((prev) => {
@@ -391,34 +197,13 @@ function App() {
 
   return (
     <div className="layout">
-      {/* Sidebar Overlay */}
-      <div
-        className={`sidebar-overlay ${isSidebarOpen ? "open" : ""}`}
-        onClick={() => setIsSidebarOpen(false)}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        currentLevel={gameState.mapIndex}
+        bestScores={bestScores}
+        onSelectLevel={loadMap}
       />
-
-      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
-        <div className="sidebar-header">
-          <h2>Levels</h2>
-          <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>
-            <X size={24} />
-          </button>
-        </div>
-        <div className="map-list">
-          {MAPS.map((_, index) => (
-            <button
-              key={index}
-              className={`map-btn ${gameState.mapIndex === index ? "active" : ""}`}
-              onClick={() => loadMap(index)}
-            >
-              Level {index + 1}{" "}
-              {bestScores[index] !== undefined
-                ? `(⭐ ${bestScores[index]})`
-                : ""}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="top-nav">
         <button className="menu-btn" onClick={() => setIsSidebarOpen(true)}>
@@ -430,19 +215,11 @@ function App() {
         <div className="app">
           <h1>Sokoban</h1>
 
-          <div className="header-controls">
-            <div className="moves">
-              Moves: {gameState.moves}
-              {bestScores[gameState.mapIndex] !== undefined && (
-                <span style={{ marginLeft: "10px", color: "#4ade80" }}>
-                  Best: {bestScores[gameState.mapIndex]}
-                </span>
-              )}
-            </div>
-            <button className="reset-btn" onClick={handleReset}>
-              Restart Level
-            </button>
-          </div>
+          <GameHeader
+            moves={gameState.moves}
+            bestScore={bestScores[gameState.mapIndex]}
+            onReset={handleReset}
+          />
 
           {isWon && <div className="win-message">🎉 You Win! 🎉</div>}
           <BoardRender
@@ -451,139 +228,21 @@ function App() {
             player={gameState.player}
           />
 
-          <div className="mobile-controls">
-            <div className="mobile-controls-row">
-              <button
-                className="control-btn"
-                onClick={() => handleMove({ dx: 0, dy: -1 })}
-              >
-                ↑
-              </button>
-            </div>
-            <div className="mobile-controls-row">
-              <button
-                className="control-btn"
-                onClick={() => handleMove({ dx: -1, dy: 0 })}
-              >
-                ←
-              </button>
-              <button
-                className="control-btn"
-                onClick={() => handleMove({ dx: 0, dy: 1 })}
-              >
-                ↓
-              </button>
-              <button
-                className="control-btn"
-                onClick={() => handleMove({ dx: 1, dy: 0 })}
-              >
-                →
-              </button>
-            </div>
+          <MobileControls
+            onMove={handleMove}
+            onUndo={handleUndo}
+            canUndo={gameState.history.length > 0 && !isWon}
+          />
 
-            <button
-              className="undo-btn"
-              onClick={handleUndo}
-              disabled={gameState.history.length === 0 || isWon}
-            >
-              <Undo2 size={16} />
-              Undo
-            </button>
-          </div>
-
-          <div className="nav-controls">
-            <button
-              className="nav-btn"
-              onClick={handlePrevMap}
-              disabled={gameState.mapIndex === 0}
-            >
-              ← Previous
-            </button>
-            <span className="level-indicator">
-              Level {gameState.mapIndex + 1} of {MAPS.length}
-            </span>
-            <button
-              className="nav-btn"
-              onClick={handleNextMap}
-              disabled={gameState.mapIndex === MAPS.length - 1}
-            >
-              Next →
-            </button>
-          </div>
+          <LevelNav
+            currentLevel={gameState.mapIndex}
+            totalLevels={MAPS.length}
+            onPrev={handlePrevMap}
+            onNext={handleNextMap}
+          />
         </div>
 
-        {/* Footer */}
-        <footer className="footer">
-          <button className="about-link" onClick={() => setIsAboutOpen(true)}>
-            About
-          </button>
-        </footer>
-      </div>
-
-      {/* About Sheet */}
-      <div
-        className={`about-sheet-overlay ${isAboutOpen ? "open" : ""}`}
-        onClick={() => setIsAboutOpen(false)}
-      />
-
-      <div className={`about-sheet ${isAboutOpen ? "open" : ""}`}>
-        <div className="about-sheet-header">
-          <h2>About</h2>
-          <button className="close-btn" onClick={() => setIsAboutOpen(false)}>
-            <X size={24} />
-          </button>
-        </div>
-        <div className="about-sheet-content">
-          <p>
-            Maps by Jordi Domènech via
-            <br />
-            <a
-              href="http://sokoban-jd.blogspot.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              sokoban-jd.blogspot.com
-            </a>
-            <br />
-            For any comments or concerns email the website maintainer:
-            ricky.ybarra@yahoo.com
-          </p>
-
-          <div style={{ marginTop: "30px" }}>
-            <p style={{ marginBottom: "10px" }}>Color Theme:</p>
-            <a
-              href="https://www.colourlovers.com/palette/1363647/S_entimental?widths=1"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src="https://www.colourlovers.com/images/badges/pw/1363/1363647_S_entimental.png"
-                style={{ width: "240px", height: "120px", border: "0 none" }}
-                alt="S_entimental"
-              />
-            </a>
-            <br />
-            <span style={{ fontSize: "10px", color: "#E0AC87" }}>
-              <a
-                href="//www.colourlovers.com/color"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: "10px", color: "#E0AC87" }}
-              >
-                Color
-              </a>{" "}
-              by{" "}
-              <a
-                href="//www.colourlovers.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: "10px", color: "#E0AC87" }}
-              >
-                COLOURlovers
-              </a>
-            </span>
-          </div>
-        </div>
+        <Footer />
       </div>
     </div>
   );
