@@ -1,12 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
-import rawMaps from "./maps.txt?raw";
+import rawMaps from "./maps/beginner.txt?raw";
 import { Undo2, Menu, X } from "lucide-react";
 
-const MAPS = rawMaps
-  .split(/;\s*\d+\n/)
-  .filter((m) => m.trim())
-  .map((m) => m.replace(/^\n+|\n+$/g, ""));
+function parseSokobanFile(rawText) {
+  const lines = rawText.split(/\r?\n/);
+  const parsedMaps = [];
+  let currentMap = [];
+
+  const mapLineRegex = /^[ \t]*[#@+$*._-]*#[#@+$*._ \t-]*$/;
+
+  for (let line of lines) {
+    if (mapLineRegex.test(line)) {
+      currentMap.push(line);
+    } else {
+      if (currentMap.length > 0) {
+        parsedMaps.push(currentMap.join("\n"));
+        currentMap = [];
+      }
+    }
+  }
+  if (currentMap.length > 0) {
+    parsedMaps.push(currentMap.join("\n"));
+  }
+
+  return parsedMaps;
+}
+
+const MAPS = parseSokobanFile(rawMaps);
 
 const CHAR_MAP = {
   "#": "wall",
