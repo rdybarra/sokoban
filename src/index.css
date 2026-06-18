@@ -3,9 +3,8 @@
     system-ui,
     -apple-system,
     sans-serif;
-  color-scheme: light dark;
-  background-color: #242424;
-  color: rgba(255, 255, 255, 0.87);
+  background-color: #e1d5b5;
+  color: #4a3021;
 }
 
 body {

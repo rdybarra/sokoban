@@ -350,15 +350,21 @@ function App() {
 
   useEffect(() => {
     if (isWon) {
-      setBestScores((prev) => {
-        const currentBest = prev[gameState.mapIndex];
-        if (currentBest === undefined || gameState.moves < currentBest) {
-          const newScores = { ...prev, [gameState.mapIndex]: gameState.moves };
-          localStorage.setItem("sokoban_progress", JSON.stringify(newScores));
-          return newScores;
-        }
-        return prev;
-      });
+      // Small timeout to prevent cascading renders
+      setTimeout(() => {
+        setBestScores((prev) => {
+          const currentBest = prev[gameState.mapIndex];
+          if (currentBest === undefined || gameState.moves < currentBest) {
+            const newScores = {
+              ...prev,
+              [gameState.mapIndex]: gameState.moves,
+            };
+            localStorage.setItem("sokoban_progress", JSON.stringify(newScores));
+            return newScores;
+          }
+          return prev;
+        });
+      }, 0);
     }
   }, [isWon, gameState.mapIndex, gameState.moves]);
 
@@ -542,6 +548,41 @@ function App() {
             For any comments or concerns email the website maintainer:
             ricky.ybarra@yahoo.com
           </p>
+
+          <div style={{ marginTop: "30px" }}>
+            <p style={{ marginBottom: "10px" }}>Color Theme:</p>
+            <a
+              href="https://www.colourlovers.com/palette/1363647/S_entimental?widths=1"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                src="https://www.colourlovers.com/images/badges/pw/1363/1363647_S_entimental.png"
+                style={{ width: "240px", height: "120px", border: "0 none" }}
+                alt="S_entimental"
+              />
+            </a>
+            <br />
+            <span style={{ fontSize: "10px", color: "#E0AC87" }}>
+              <a
+                href="//www.colourlovers.com/color"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "10px", color: "#E0AC87" }}
+              >
+                Color
+              </a>{" "}
+              by{" "}
+              <a
+                href="//www.colourlovers.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "10px", color: "#E0AC87" }}
+              >
+                COLOURlovers
+              </a>
+            </span>
+          </div>
         </div>
       </div>
     </div>
