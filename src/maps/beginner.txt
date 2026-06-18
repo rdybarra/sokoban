@@ -39,18 +39,6 @@ Limit: 22
 
 ######
 #    #
-# #$ #
-# .$.#
-#  @ #
-######
-Author: Jordi Domenech
-Title: Level 2 Duh! - for David W. Skinner
-Set: Life #1
-Date: 2017.8.22
-Limit: 25
-
-######
-#    #
 #. $ #
 #.#$##
 #    #

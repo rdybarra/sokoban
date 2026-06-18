@@ -216,6 +216,8 @@ function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
   const handleUndo = useCallback(() => {
     setGameState((prev) => {
       if (prev.history.length === 0) return prev;
@@ -502,6 +504,44 @@ function App() {
               Next →
             </button>
           </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="footer">
+          <button className="about-link" onClick={() => setIsAboutOpen(true)}>
+            About
+          </button>
+        </footer>
+      </div>
+
+      {/* About Sheet */}
+      <div
+        className={`about-sheet-overlay ${isAboutOpen ? "open" : ""}`}
+        onClick={() => setIsAboutOpen(false)}
+      />
+
+      <div className={`about-sheet ${isAboutOpen ? "open" : ""}`}>
+        <div className="about-sheet-header">
+          <h2>About</h2>
+          <button className="close-btn" onClick={() => setIsAboutOpen(false)}>
+            <X size={24} />
+          </button>
+        </div>
+        <div className="about-sheet-content">
+          <p>
+            Maps by Jordi Domènech via
+            <br />
+            <a
+              href="http://sokoban-jd.blogspot.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              sokoban-jd.blogspot.com
+            </a>
+            <br />
+            For any comments or concerns email the website maintainer:
+            ricky.ybarra@yahoo.com
+          </p>
         </div>
       </div>
     </div>

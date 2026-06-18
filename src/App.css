@@ -379,3 +379,97 @@
   font-weight: bold;
   color: #888;
 }
+
+/* Footer and About Sheet */
+.footer {
+  margin-top: auto;
+  padding: 30px 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.about-link {
+  background: transparent;
+  border: none;
+  color: #888;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s;
+  padding: 8px 16px;
+}
+
+.about-link:hover {
+  color: #ccc;
+}
+
+.about-sheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.about-sheet-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.about-sheet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100vh; /* Full page sheet */
+  background-color: #1a1a1a;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  z-index: 70;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.about-sheet.open {
+  transform: translateY(0);
+}
+
+.about-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #333;
+}
+
+.about-sheet-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 24px;
+}
+
+.about-sheet-content {
+  color: #ccc;
+  font-size: 16px;
+  line-height: 1.8;
+  overflow-y: auto;
+}
+
+.about-sheet-content a {
+  color: #4ade80;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.about-sheet-content a:hover {
+  color: #38bdf8;
+  text-decoration: underline;
+}
